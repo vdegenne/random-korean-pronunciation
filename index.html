@@ -6,21 +6,34 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <!-- <script type="module" src=""></script> -->
     <script type="module" src="https://unpkg.com/@material/mwc-button@0.20.0/mwc-button.js?module"></script>
+    <script type="module" src="https://unpkg.com/@material/mwc-icon-button@0.20.0/mwc-icon-button.js?module"></script>
     <script type="module" src="https://unpkg.com/@material/mwc-snackbar@0.20.0/mwc-snackbar.js?module"></script>
     <script type="module" src="https://unpkg.com/@material/mwc-circular-progress@0.20.0/mwc-circular-progress.js?module"></script>
     <link href="https://fonts.googleapis.com/css?family=Material+Icons&display=block" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500" rel="stylesheet">
+    <style>
+      @font-face {
+        font-family: 'NanumSquare';
+        /* src: url(../webfont/NanumSquare/NanumSquareR.eot); */
+        /* src: url(../webfont/NanumSquare/NanumSquareR.eot?#iefix) format('embedded-opentype'), */
+        src: url(./fonts/NanumSquareR.woff) format('woff');
+        /* url(../webfont/NanumSquare/NanumSquareR.ttf) format('truetype'); */
+      }
+    </style>
   </head>
   <body>
     <style>
       body {
         margin: 0;
         height: 100vh;
+        font-family: Roboto;
       }
     </style>
     <korean-app></korean-app>
     <script src="./words.js"></script>
     <script type="module">
       import {LitElement, html, css} from 'https://unpkg.com/lit-element@2.4.0/lit-element.js?module';
+      import {nothing} from 'https://unpkg.com/lit-html@1.3.0/lit-html.js?module';
       import {playKorean} from 'https://assiets.vdegenne.com/voices.js';
       class KoreanApp extends LitElement {
         static properties = {
@@ -43,6 +56,7 @@
           /* padding: 20px 20px 30px 20px; */
           min-height: 160px;
           display: flex;
+          font-family: NanumSquare;
         }
         #main-button {
           --mdc-theme-primary: black;
@@ -50,6 +64,15 @@
 
         mwc-circular-progress {
           padding-top: 20px;
+          --mdc-theme-primary: black;
+        }
+
+        mwc-icon-button {
+          --mdc-icon-button-size: 68px;
+          --mdc-icon-size:50px;
+          position: absolute;
+          top:0;right:0;
+          color:grey;
         }
 
         mwc-snackbar {
@@ -81,6 +104,9 @@
 
         render () {
           return html`
+          ${this.word !== null ?
+            html`<mwc-icon-button icon="open_in_new" @click="${this.openInNew}"></mwc-icon-button>` : nothing}
+
           <div id="word-container">
           ${this.word !== null ?
             html`${this.word}` :
@@ -91,10 +117,17 @@
           <mwc-button raised icon="arrow_forward"
             id="main-button"
             ?disabled=${!this.played}
-            @click="${this.nextWord}">next</mwc-button>
+            @click="${this.nextWord}">next word</mwc-button>
+
+          <span style="color:grey;margin:20px 0 20px;">${words.length} words</span>
 
           <mwc-snackbar @click="${e => e.stopPropagation()}"></mwc-snackbar>
           `
+        }
+
+        openInNew (e) {
+          e.stopPropagation();
+          window.open(`https://ko.dict.naver.com/#/search?query=${encodeURIComponent(this.word)}`, '_blank');
         }
 
         async pickNewWord () {
@@ -114,7 +147,7 @@
           this.played = false;
           await this.pickNewWord();
           if (!this.alreadyPlayed) {
-            this.toast('Click anywhere to play the sounds')
+            this.toast('Click anywhere to hear the audio')
             this.alreadyPlayed = true;
           }
         }
