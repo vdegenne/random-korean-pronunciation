@@ -1,0 +1,137 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Korean pronunciation</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- <script type="module" src=""></script> -->
+    <script type="module" src="https://unpkg.com/@material/mwc-button@0.20.0/mwc-button.js?module"></script>
+    <script type="module" src="https://unpkg.com/@material/mwc-snackbar@0.20.0/mwc-snackbar.js?module"></script>
+    <script type="module" src="https://unpkg.com/@material/mwc-circular-progress@0.20.0/mwc-circular-progress.js?module"></script>
+    <link href="https://fonts.googleapis.com/css?family=Material+Icons&display=block" rel="stylesheet">
+  </head>
+  <body>
+    <style>
+      body {
+        margin: 0;
+        height: 100vh;
+      }
+    </style>
+    <korean-app></korean-app>
+    <script src="./words.js"></script>
+    <script type="module">
+      import {LitElement, html, css} from 'https://unpkg.com/lit-element@2.4.0/lit-element.js?module';
+      import {playKorean} from 'https://assiets.vdegenne.com/voices.js';
+      class KoreanApp extends LitElement {
+        static properties = {
+          word: {type: String},
+          played: {type: Boolean}
+        }
+
+        static styles = css`
+        :host {
+          height: 100vh;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          user-select: none;
+          cursor: pointer;
+        }
+        #word-container {
+          font-size: 66px;
+          /* padding: 20px 20px 30px 20px; */
+          min-height: 160px;
+          display: flex;
+        }
+        #main-button {
+          --mdc-theme-primary: black;
+        }
+
+        mwc-circular-progress {
+          padding-top: 20px;
+        }
+
+        mwc-snackbar {
+          --mdc-snackbar-action-color: yellow;
+        }
+        `;
+
+        constructor() {
+          super();
+          this.nextWord()
+
+          let playingWord = null;
+          this.addEventListener('click', async () => {
+            if (this.word === null) {
+              return;
+            }
+            try {
+              playingWord = this.word;
+              const audio = await playKorean(this.word);
+              if (playingWord === this.word) {
+                this.played = true;
+              }
+            } catch (e) {
+              this.toast('Sorry, this sound is not available')
+              this.played = true;
+            }
+          })
+        }
+
+        render () {
+          return html`
+          <div id="word-container">
+          ${this.word !== null ?
+            html`${this.word}` :
+            html`<mwc-circular-progress indeterminate></mwc-circular-progress>`
+          }
+          </div>
+
+          <mwc-button raised icon="arrow_forward"
+            id="main-button"
+            ?disabled=${!this.played}
+            @click="${this.nextWord}">next</mwc-button>
+
+          <mwc-snackbar @click="${e => e.stopPropagation()}"></mwc-snackbar>
+          `
+        }
+
+        async pickNewWord () {
+          this.word = null;
+          let word, response;
+          do {
+            word = words[Math.floor(Math.random() * words.length - 1)];
+            response = await fetch (`https://assiets.vdegenne.com/api/audios/korean/${word}`);
+          } while (response.status !== 200);
+          this.word = word;
+        }
+
+        async nextWord (e) {
+          if (e) {
+            e.stopPropagation();
+          }
+          this.played = false;
+          await this.pickNewWord();
+          if (!this.alreadyPlayed) {
+            this.toast('Click anywhere to play the sounds')
+            this.alreadyPlayed = true;
+          }
+        }
+
+
+        toast (message, timeoutMs = 4000) {
+          const snackbar = this.shadowRoot.querySelector('mwc-snackbar')
+          snackbar.labelText = message;
+          snackbar.timeoutMs = timeoutMs;
+          snackbar.open = true
+        }
+        closeSnackbar () {
+          const snackbar = this.shadowRoot.querySelector('mwc-snackbar')
+          snackbar.open = false;
+        }
+      }
+      window.customElements.define('korean-app', KoreanApp);
+    </script>
+  </body>
+</html>
