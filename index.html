@@ -56,6 +56,8 @@
           /* padding: 20px 20px 30px 20px; */
           min-height: 160px;
           display: flex;
+	  justify-content: center;
+	  align-items: flex-start;
           font-family: NanumSquare;
         }
         #main-button {
@@ -109,7 +111,8 @@
 
           <div id="word-container">
           ${this.word !== null ?
-            html`${this.word}` :
+	    html`<span style="user-select:text;cursor:text"
+		       @click="${e => e.stopPropagation()}">${this.word}</span>` :
             html`<mwc-circular-progress indeterminate></mwc-circular-progress>`
           }
           </div>
