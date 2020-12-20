@@ -8,6 +8,7 @@
     <script type="module" src="https://unpkg.com/@material/mwc-button@0.20.0/mwc-button.js?module"></script>
     <script type="module" src="https://unpkg.com/@material/mwc-icon-button@0.20.0/mwc-icon-button.js?module"></script>
     <script type="module" src="https://unpkg.com/@material/mwc-snackbar@0.20.0/mwc-snackbar.js?module"></script>
+    <script type="module" src="https://unpkg.com/@material/mwc-dialog@0.20.0/mwc-dialog.js?module"></script>
     <script type="module" src="https://unpkg.com/@material/mwc-circular-progress@0.20.0/mwc-circular-progress.js?module"></script>
     <link href="https://fonts.googleapis.com/css?family=Material+Icons&display=block" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500" rel="stylesheet">
@@ -56,12 +57,22 @@
           /* padding: 20px 20px 30px 20px; */
           min-height: 160px;
           display: flex;
-	  justify-content: center;
-	  align-items: flex-start;
+          justify-content: center;
+          align-items: flex-start;
           font-family: NanumSquare;
         }
         #main-button {
           --mdc-theme-primary: black;
+        }
+
+        mwc-dialog > #content {
+          margin-top: 14px;
+        }
+
+        mwc-dialog > #content > mwc-button {
+          display: block;
+          --mdc-theme-primary: black;
+          margin: 13px 0;
         }
 
         mwc-circular-progress {
@@ -124,13 +135,27 @@
 
           <span style="color:grey;margin:20px 0 20px;">${words.length} words</span>
 
+          <mwc-dialog heading="Open with..."
+            @click=${e => e.stopPropagation()}
+          open>
+            <div id="content">
+              <mwc-button>
+                <b slot="icon" style="line-height:18px;color:green">N</b>Naver
+              </mwc-button>
+              <mwc-button icon="language" label="Web Search"></mwc-button>
+              <mwc-button icon="image" label="Images"></mwc-button>
+            </div>
+            <mwc-button slot="primaryAction" dialogAction="close">Cancel</mwc-button>
+          </mwc-dialog>
+
           <mwc-snackbar @click="${e => e.stopPropagation()}"></mwc-snackbar>
           `
         }
 
         openInNew (e) {
           e.stopPropagation();
-          window.open(`https://ko.dict.naver.com/#/search?query=${encodeURIComponent(this.word)}`, '_blank');
+          this.shadowRoot.querySelector('mwc-dialog').open = true;
+          // window.open(`https://ko.dict.naver.com/#/search?query=${encodeURIComponent(this.word)}`, '_blank');
         }
 
         async pickNewWord () {
@@ -165,6 +190,14 @@
         closeSnackbar () {
           const snackbar = this.shadowRoot.querySelector('mwc-snackbar')
           snackbar.open = false;
+        }
+
+        updated () {
+          this.shadowRoot.querySelectorAll('mwc-dialog > #content mwc-button').forEach(b => {
+            try {
+              b.shadowRoot.querySelector('.leading-icon').style='height:18px'
+            } catch (e) {}
+          })
         }
       }
       window.customElements.define('korean-app', KoreanApp);
