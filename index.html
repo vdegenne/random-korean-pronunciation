@@ -81,10 +81,10 @@
         }
 
         mwc-icon-button {
-          --mdc-icon-button-size: 68px;
-          --mdc-icon-size:50px;
+          --mdc-icon-button-size: 56px;
+          --mdc-icon-size:40px;
           position: absolute;
-          top:0;right:0;
+          top:5px;right:5px;
           color:grey;
         }
 
@@ -118,7 +118,7 @@
         render () {
           return html`
           ${this.word !== null ?
-            html`<mwc-icon-button icon="open_in_new" @click="${this.openInNew}"></mwc-icon-button>` : nothing}
+            html`<mwc-icon-button icon="open_in_new" @click="${this.openExternalDialog}"></mwc-icon-button>` : nothing}
 
           <div id="word-container">
           ${this.word !== null ?
@@ -136,14 +136,15 @@
           <span style="color:grey;margin:20px 0 20px;">${words.length} words</span>
 
           <mwc-dialog heading="Open with..."
-            @click=${e => e.stopPropagation()}
-          open>
+		      @click="${e => e.stopPropagation()}">
             <div id="content">
-              <mwc-button>
+              <mwc-button @click="${() => this.openIn('naver')}">
                 <b slot="icon" style="line-height:18px;color:green">N</b>Naver
               </mwc-button>
-              <mwc-button icon="language" label="Web Search"></mwc-button>
-              <mwc-button icon="image" label="Images"></mwc-button>
+              <mwc-button icon="language" label="Web Search"
+					  @click="${() => this.openIn('google')}"></mwc-button>
+              <mwc-button icon="image" label="Images"
+				       @click="${() => this.openIn('images')}"></mwc-button>
             </div>
             <mwc-button slot="primaryAction" dialogAction="close">Cancel</mwc-button>
           </mwc-dialog>
@@ -152,10 +153,23 @@
           `
         }
 
-        openInNew (e) {
+        openExternalDialog (e) {
           e.stopPropagation();
           this.shadowRoot.querySelector('mwc-dialog').open = true;
-          // window.open(`https://ko.dict.naver.com/#/search?query=${encodeURIComponent(this.word)}`, '_blank');
+        }
+
+        openIn (site) {
+          switch (site) {
+            case 'naver':
+              window.open(`https://ko.dict.naver.com/#/search?query=${encodeURIComponent(this.word)}&range=example`, '_blank');
+              break;
+            case 'google':
+	      window.open(`https://www.google.com/search?hl=en&q=${encodeURIComponent(this.word)}`, '_blank');
+              break;
+            case 'images':
+	      window.open(`https://www.google.com/search?hl=en&q=${encodeURIComponent(this.word)}&source=lnms&tbm=isch`, '_blank');
+              break;
+          }
         }
 
         async pickNewWord () {
