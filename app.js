@@ -886,8 +886,8 @@ const Rt=de`.mdc-circular-progress__determinate-circle,.mdc-circular-progress__i
     left: 10px;
   }
   #tags > .tag {
-    padding: 2px 4px;
-    background-color: #e0e0e0;
+    padding: 3px 5px;
+    background-color: #eeeeee;
     border-radius: 4px;
     display: inline-block;
     margin: 0 3px 3px 0;
