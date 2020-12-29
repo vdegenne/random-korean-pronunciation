@@ -1,17 +1,19 @@
-import {LitElement, html, css} from 'lit-element';
-import {nothing} from 'lit-html';
+import { LitElement,html,css } from 'lit-element';
+import { nothing } from 'lit-html';
 // import {playKorean} from 'https://assiets.vdegenne.com/voices.js';
 import '@material/mwc-button';
 import '@material/mwc-icon-button';
 import '@material/mwc-snackbar';
 import '@material/mwc-dialog';
 import '@material/mwc-circular-progress';
-import {words} from './words';
+import { words } from './words';
 
 export class KoreanApp extends LitElement {
   static properties = {
     word: { type: String },
-    played: { type: Boolean }
+    setName: { type: String },
+    played: { type: Boolean },
+    prevent17: { type: Boolean },
   }
 
   static styles = css`
@@ -53,20 +55,36 @@ export class KoreanApp extends LitElement {
   }
 
   mwc-icon-button {
-    --mdc-icon-button-size: 56px;
-    --mdc-icon-size:40px;
+    --mdc-icon-button-size: 46px;
+    --mdc-icon-size:30px;
     position: absolute;
-    top:5px;right:5px;
+    bottom:5px;right:5px;
     color:grey;
   }
 
   mwc-snackbar {
     --mdc-snackbar-action-color: yellow;
   }
+
+  #tags {
+    position: absolute;
+    top:10px;
+    left: 10px;
+  }
+  #tags > .tag {
+    padding: 2px 4px;
+    background-color: #e0e0e0;
+    border-radius: 4px;
+    display: inline-block;
+    margin: 0 3px 3px 0;
+  }
   `;
 
   constructor() {
     super();
+
+    this.prevent17 = !new URLSearchParams(window.location.search).has('17');
+
     this.nextWord()
 
     let playingWord = null;
@@ -89,8 +107,11 @@ export class KoreanApp extends LitElement {
 
   render() {
     return html`
-    ${this.word !== null ?
-      html`<mwc-icon-button icon="open_in_new" @click="${this.openExternalDialog}"></mwc-icon-button>` : nothing}
+    <div id="tags">
+      ${this.word !== null ? this.setName.split('/').map(name => {
+      return html`<div class="tag">#${name}</div>`
+      }) : nothing}
+    </div>
 
     <div id="word-container">
       ${this.word !== null ?
@@ -102,9 +123,12 @@ export class KoreanApp extends LitElement {
     <mwc-button raised icon="arrow_forward" id="main-button" ?disabled=${!this.played} @click="${this.nextWord}">next word
     </mwc-button>
 
-    <span style="color:grey;margin:20px 0 20px;">${words.length} words</span>
+    <span style="color:grey;margin:20px 0 0;"><span id="word-count">${words.length}</span> words</span>
 
-    <mwc-dialog heading="Open with..." @click="${e => e.stopPropagation()}">
+    ${this.word !== null ?
+      html`<mwc-icon-button icon="open_in_new" @click="${this.openExternalDialog}"></mwc-icon-button>` : nothing}
+
+    <mwc-dialog heading="${this.word || ''}" @click="${e => e.stopPropagation()}">
       <div id="content">
         <mwc-button @click="${() => this.openIn('naver')}">
           <b slot="icon" style="line-height:18px;color:green">N</b>Naver
@@ -116,17 +140,22 @@ export class KoreanApp extends LitElement {
     </mwc-dialog>
 
     <mwc-snackbar @click="${e => e.stopPropagation()}"></mwc-snackbar>
-    `
-  }
+    `;
+    }
 
-  openExternalDialog(e) {
+    firstUpdated() {
+      const wordCount = [...new Set(words.map(set => set.w).reduce((acc, v) => acc.concat(v), []))].length;
+      this.shadowRoot.querySelector('#word-count').textContent = wordCount;
+    }
+
+    openExternalDialog(e) {
     e.stopPropagation();
     this.shadowRoot.querySelector('mwc-dialog').open = true;
-  }
+    }
 
-  openIn(site) {
-    switch (site) {
-      case 'naver':
+    openIn(site) {
+    switch(site) {
+    case 'naver':
         window.open(`https://ko.dict.naver.com/#/search?query=${encodeURIComponent(this.word)}&range=example`,'_blank');
         break;
       case 'google':
@@ -136,48 +165,50 @@ export class KoreanApp extends LitElement {
         window.open(`https://www.google.com/search?hl=en&q=${encodeURIComponent(this.word)}&source=lnms&tbm=isch`,'_blank');
         break;
     }
-  }
+    }
 
-  async pickNewWord() {
+    async pickNewWord() {
     this.word = null;
-    let word,response;
+    let set,word,response;
     do {
-      word = words[Math.floor(Math.random() * words.length - 1)];
-      response = await fetch(`https://assiets.vdegenne.com/api/audios/korean/${word}`);
-    } while (response.status !== 200);
-    this.word = word;
+    set = words[Math.floor(Math.random() * words.length - 1)];
+    word = set.w[Math.floor(Math.random() * set.w.length - 1)];
+    response = await fetch(`https://assiets.vdegenne.com/api/audios/korean/${word}`);
+    } while(response.status !== 200);
+this.setName = set.n;
+this.word = word;
   }
 
-  async nextWord(e) {
-    if (e) {
-      e.stopPropagation();
-    }
-    this.played = false;
-    await this.pickNewWord();
-    if (!this.alreadyPlayed) {
-      this.toast('Click anywhere to hear the audio')
-      this.alreadyPlayed = true;
-    }
+async nextWord(e) {
+  if (e) {
+    e.stopPropagation();
   }
+  this.played = false;
+  await this.pickNewWord();
+  if (!this.alreadyPlayed) {
+    this.toast('Click anywhere to hear the audio')
+    this.alreadyPlayed = true;
+  }
+}
 
 
-  toast(message,timeoutMs = 4000) {
-    const snackbar = this.shadowRoot.querySelector('mwc-snackbar')
-    snackbar.labelText = message;
-    snackbar.timeoutMs = timeoutMs;
-    snackbar.open = true
-  }
-  closeSnackbar() {
-    const snackbar = this.shadowRoot.querySelector('mwc-snackbar')
-    snackbar.open = false;
-  }
+toast(message,timeoutMs = 4000) {
+  const snackbar = this.shadowRoot.querySelector('mwc-snackbar')
+  snackbar.labelText = message;
+  snackbar.timeoutMs = timeoutMs;
+  snackbar.open = true
+}
+closeSnackbar() {
+  const snackbar = this.shadowRoot.querySelector('mwc-snackbar')
+  snackbar.open = false;
+}
 
-  updated() {
-    this.shadowRoot.querySelectorAll('mwc-dialog > #content mwc-button').forEach(b => {
-      try {
-        b.shadowRoot.querySelector('.leading-icon').style = 'height:18px'
-      } catch (e) { }
-    })
-  }
+updated() {
+  this.shadowRoot.querySelectorAll('mwc-dialog > #content mwc-button').forEach(b => {
+    try {
+      b.shadowRoot.querySelector('.leading-icon').style = 'height:18px'
+    } catch (e) { }
+  })
+}
 }
 window.customElements.define('korean-app',KoreanApp);
